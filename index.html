@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Grok Chat Interface</title>
+    <title>Scam Detector</title>
     <style>
         * {
             margin: 0;
@@ -26,7 +26,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             overflow: hidden;
         }
 
@@ -38,121 +38,92 @@
         }
 
         .header h1 {
-            font-size: 28px;
-            margin-bottom: 5px;
+            font-size: 32px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
 
         .header p {
             opacity: 0.9;
-            font-size: 14px;
+            font-size: 16px;
         }
 
-        .chat-area {
-            padding: 30px;
-            min-height: 300px;
-            max-height: 400px;
-            overflow-y: auto;
+        .content {
+            padding: 40px;
         }
 
-        .message {
-            margin-bottom: 20px;
-            animation: fadeIn 0.3s ease-in;
+        .input-section {
+            margin-bottom: 30px;
         }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .message.user {
-            text-align: right;
-        }
-
-        .message-bubble {
-            display: inline-block;
-            padding: 12px 18px;
-            border-radius: 18px;
-            max-width: 80%;
-            word-wrap: break-word;
-        }
-
-        .message.user .message-bubble {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .message.bot .message-bubble {
-            background: #f1f3f4;
-            color: #333;
-        }
-
-        .message-label {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 5px;
+        label {
+            display: block;
             font-weight: 600;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 16px;
         }
 
-        .input-area {
-            padding: 20px 30px 30px;
-            border-top: 1px solid #eee;
-        }
-
-        .input-container {
-            display: flex;
-            gap: 10px;
-        }
-
-        #messageInput {
-            flex: 1;
+        textarea {
+            width: 100%;
+            min-height: 150px;
             padding: 15px;
             border: 2px solid #e0e0e0;
-            border-radius: 25px;
-            font-size: 16px;
+            border-radius: 12px;
+            font-size: 15px;
+            font-family: inherit;
+            resize: vertical;
             outline: none;
             transition: border-color 0.3s;
         }
 
-        #messageInput:focus {
+        textarea:focus {
             border-color: #667eea;
         }
 
-        #sendButton {
+        .button-container {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
             padding: 15px 30px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            border-radius: 25px;
+            border-radius: 12px;
             font-size: 16px;
             font-weight: 600;
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
         }
 
-        #sendButton:hover:not(:disabled) {
+        button:hover:not(:disabled) {
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
         }
 
-        #sendButton:active:not(:disabled) {
+        button:active:not(:disabled) {
             transform: translateY(0);
         }
 
-        #sendButton:disabled {
+        button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
+        }
+
+        .clear-btn {
+            background: #6c757d;
         }
 
         .loading {
             display: none;
             text-align: center;
-            padding: 10px;
+            padding: 20px;
             color: #666;
         }
 
@@ -160,111 +131,193 @@
             display: block;
         }
 
-        .loading-dots {
-            display: inline-block;
+        .loading-spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
         }
 
-        .loading-dots span {
-            animation: blink 1.4s infinite;
-            font-size: 20px;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .loading-dots span:nth-child(2) {
-            animation-delay: 0.2s;
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 25px;
+            border-radius: 12px;
+            animation: fadeIn 0.5s ease-in;
         }
 
-        .loading-dots span:nth-child(3) {
-            animation-delay: 0.4s;
+        .result.active {
+            display: block;
         }
 
-        @keyframes blink {
-            0%, 80%, 100% {
+        .result.scam {
+            background: #fee;
+            border: 2px solid #e74c3c;
+        }
+
+        .result.legitimate {
+            background: #efe;
+            border: 2px solid #27ae60;
+        }
+
+        .result.suspicious {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+        }
+
+        .result-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .result.scam .result-header {
+            color: #c0392b;
+        }
+
+        .result.legitimate .result-header {
+            color: #229954;
+        }
+
+        .result.suspicious .result-header {
+            color: #d68910;
+        }
+
+        .result-content {
+            color: #333;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            font-size: 15px;
+        }
+
+        @keyframes fadeIn {
+            from {
                 opacity: 0;
+                transform: translateY(20px);
             }
-            40% {
+            to {
                 opacity: 1;
+                transform: translateY(0);
             }
         }
 
         .error {
             background: #fee;
             color: #c33;
-            padding: 12px;
+            padding: 15px;
             border-radius: 8px;
-            margin-bottom: 15px;
+            margin-top: 20px;
             display: none;
         }
 
         .error.active {
             display: block;
         }
+
+        .examples {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
+        }
+
+        .examples h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .example-btn {
+            display: inline-block;
+            padding: 8px 15px;
+            margin: 5px;
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            border-radius: 20px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .example-btn:hover {
+            background: #667eea;
+            color: white;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>AI Chat</h1>
-            <p>Powered by GROQ GPT-OSS-20B</p>
+            <h1>🛡️ Scam Detector</h1>
+            <p>AI-powered scam and phishing detection</p>
         </div>
 
-        <div class="chat-area" id="chatArea">
-            <div class="message bot">
-                <div class="message-label">AI Assistant</div>
-                <div class="message-bubble">
-                    Hello! I'm your AI assistant powered by GROQ. How can I help you today?
-                </div>
-            </div>
-        </div>
-
-        <div class="error" id="errorMessage"></div>
-
-        <div class="loading" id="loading">
-            <div class="loading-dots">
-                <span>.</span><span>.</span><span>.</span>
-            </div>
-            AI is thinking...
-        </div>
-
-        <div class="input-area">
-            <div class="input-container">
-                <input 
-                    type="text" 
+        <div class="content">
+            <div class="input-section">
+                <label for="messageInput">Enter the message to analyze:</label>
+                <textarea 
                     id="messageInput" 
-                    placeholder="Type your message..." 
-                    autocomplete="off"
-                >
-                <button id="sendButton">Send</button>
+                    placeholder="Paste the suspicious email, SMS, or message here...&#10;&#10;Example:&#10;&quot;URGENT: Your bank account has been suspended. Click here immediately to verify your identity and restore access: http://suspicious-link.com&quot;"
+                ></textarea>
+            </div>
+
+            <div class="button-container">
+                <button id="analyzeBtn">🔍 Analyze Message</button>
+                <button id="clearBtn" class="clear-btn">Clear</button>
+            </div>
+
+            <div class="examples">
+                <h3>Try these examples:</h3>
+                <span class="example-btn" data-example="URGENT: Your package delivery failed! Click here NOW to reschedule or your package will be returned: bit.ly/pkg123">📦 Delivery Scam</span>
+                <span class="example-btn" data-example="Congratulations! You've won $1,000,000 in our lottery! Reply with your bank details to claim your prize immediately!">💰 Prize Scam</span>
+                <span class="example-btn" data-example="Hi, this is a reminder that your dentist appointment is scheduled for tomorrow at 2 PM. Reply CONFIRM or CANCEL.">🦷 Legitimate Message</span>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="loading-spinner"></div>
+                <p>Analyzing message...</p>
+            </div>
+
+            <div class="error" id="errorMessage"></div>
+
+            <div class="result" id="result">
+                <div class="result-header" id="resultHeader"></div>
+                <div class="result-content" id="resultContent"></div>
             </div>
         </div>
     </div>
 
     <script>
-        const chatArea = document.getElementById('chatArea');
         const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
+        const analyzeBtn = document.getElementById('analyzeBtn');
+        const clearBtn = document.getElementById('clearBtn');
         const loading = document.getElementById('loading');
         const errorMessage = document.getElementById('errorMessage');
+        const result = document.getElementById('result');
+        const resultHeader = document.getElementById('resultHeader');
+        const resultContent = document.getElementById('resultContent');
 
-        const API_URL = 'http://127.0.0.1:8000/chat';
+        const API_URL = 'http://127.0.0.1:8000/check-scam';
 
-        function addMessage(text, isUser) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `message ${isUser ? 'user' : 'bot'}`;
-            
-            const label = document.createElement('div');
-            label.className = 'message-label';
-            label.textContent = isUser ? 'You' : 'AI Assistant';
-            
-            const bubble = document.createElement('div');
-            bubble.className = 'message-bubble';
-            bubble.textContent = text;
-            
-            messageDiv.appendChild(label);
-            messageDiv.appendChild(bubble);
-            chatArea.appendChild(messageDiv);
-            
-            chatArea.scrollTop = chatArea.scrollHeight;
-        }
+        // Example buttons
+        document.querySelectorAll('.example-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                messageInput.value = btn.dataset.example;
+                messageInput.focus();
+            });
+        });
 
         function showError(message) {
             errorMessage.textContent = message;
@@ -274,19 +327,46 @@
             }, 5000);
         }
 
-        async function sendMessage() {
+        function hideResult() {
+            result.classList.remove('active', 'scam', 'legitimate', 'suspicious');
+        }
+
+        function showResult(analysis) {
+            // Determine verdict type from response
+            let verdictType = 'suspicious';
+            let icon = '⚠️';
+            
+            const analysisLower = analysis.toLowerCase();
+            
+            if (analysisLower.includes('verdict: scam') || analysisLower.includes('verdict:scam')) {
+                verdictType = 'scam';
+                icon = '🚨';
+            } else if (analysisLower.includes('verdict: legitimate') || analysisLower.includes('verdict:legitimate')) {
+                verdictType = 'legitimate';
+                icon = '✅';
+            } else if (analysisLower.includes('verdict: suspicious') || analysisLower.includes('verdict:suspicious')) {
+                verdictType = 'suspicious';
+                icon = '⚠️';
+            }
+
+            result.className = `result active ${verdictType}`;
+            resultHeader.textContent = `${icon} Analysis Results`;
+            resultContent.textContent = analysis;
+        }
+
+        async function analyzeMessage() {
             const message = messageInput.value.trim();
             
-            if (!message) return;
-            
-            addMessage(message, true);
-            messageInput.value = '';
-            
-            sendButton.disabled = true;
-            messageInput.disabled = true;
-            loading.classList.add('active');
+            if (!message) {
+                showError('Please enter a message to analyze.');
+                return;
+            }
+
+            hideResult();
             errorMessage.classList.remove('active');
-            
+            analyzeBtn.disabled = true;
+            loading.classList.add('active');
+
             try {
                 const response = await fetch(API_URL, {
                     method: 'POST',
@@ -295,31 +375,41 @@
                     },
                     body: JSON.stringify({ message: message })
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                addMessage(data.response, false);
                 
+                if (data.success) {
+                    showResult(data.analysis);
+                } else {
+                    showError(data.error || 'Failed to analyze message.');
+                }
+
             } catch (error) {
                 console.error('Error:', error);
-                showError('Failed to get response. Make sure the API server is running.');
-                addMessage('Sorry, I encountered an error. Please try again.', false);
+                showError('Failed to connect to the server. Make sure the API is running.');
             } finally {
                 loading.classList.remove('active');
-                sendButton.disabled = false;
-                messageInput.disabled = false;
-                messageInput.focus();
+                analyzeBtn.disabled = false;
             }
         }
 
-        sendButton.addEventListener('click', sendMessage);
-        
-        messageInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                sendMessage();
+        function clearForm() {
+            messageInput.value = '';
+            hideResult();
+            errorMessage.classList.remove('active');
+            messageInput.focus();
+        }
+
+        analyzeBtn.addEventListener('click', analyzeMessage);
+        clearBtn.addEventListener('click', clearForm);
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                analyzeMessage();
             }
         });
 

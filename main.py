@@ -1,8 +1,6 @@
 import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pydantic import BaseModel
 from dotenv import load_dotenv
@@ -15,19 +13,20 @@ app = FastAPI()
 # Enable CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Allows all origins
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],  # Allows all methods
-    allow_headers=["*"],  # Allows all headers
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
+# Initialize GROQ client
 client = OpenAI(
     api_key=os.getenv("GROQ_API_KEY"),
     base_url="https://api.groq.com/openai/v1"
 )
 
 
-class ChatRequest(BaseModel):
+class MessageRequest(BaseModel):
     message: str
 
 
@@ -35,33 +34,57 @@ class ChatRequest(BaseModel):
 def home():
     return FileResponse("index.html")
 
-@app.get("/api")
-def api_status():
-    return {"message": "Grok FastAPI is running"}
 
-
-@app.post("/chat")
-def chat(request: ChatRequest):
+@app.post("/check-scam")
+def check_scam(request: MessageRequest):
     try:
-        print(f"Received message: {request.message}")
-        print(f"API Key: {os.getenv('GROQ_API_KEY')[:10]}...")
-        
+        # Create a detailed prompt for scam detection
+        prompt = f"""You are a scam detection expert. Analyze the following message and determine if it's a scam or legitimate.
+
+Message to analyze:
+"{request.message}"
+
+Analyze this message for common scam indicators such as:
+- Urgency or pressure tactics
+- Requests for personal information, passwords, or financial details
+- Too-good-to-be-true offers
+- Poor grammar or spelling
+- Suspicious links or phone numbers
+- Impersonation of official entities
+- Requests for money transfers or gift cards
+- Threatening language
+
+Provide your response in the following format:
+1. Verdict: [SCAM/LEGITIMATE/SUSPICIOUS]
+2. Confidence: [percentage]
+3. Reasoning: [brief explanation]
+4. Red Flags: [list key warning signs if any]
+5. Recommendation: [what the user should do]
+
+Be concise but thorough."""
+
         response = client.chat.completions.create(
             model="openai/gpt-oss-20b",
             messages=[
                 {
+                    "role": "system",
+                    "content": "You are an expert at detecting scams, phishing attempts, and fraudulent messages. You provide clear, accurate assessments to help people stay safe."
+                },
+                {
                     "role": "user",
-                    "content": request.message
+                    "content": prompt
                 }
-            ]
+            ],
+            temperature=0.3  # Lower temperature for more consistent analysis
         )
 
         return {
-            "response": response.choices[0].message.content
+            "success": True,
+            "analysis": response.choices[0].message.content
         }
     except Exception as e:
-        print(f"Error occurred: {str(e)}")
-        print(f"Error type: {type(e).__name__}")
         return {
-            "response": f"Error: {str(e)}"
+            "success": False,
+            "error": str(e),
+            "analysis": "Unable to analyze the message. Please try again."
         }
